@@ -41,7 +41,7 @@ module Pod
       def podfile_from_spec(path, spec_name, platform_name, deployment_target, subspecs, sources)
         options = {}
         if path
-          options[:podspec] = path
+          options[:path] = path
         else
           options[:path] = '.'
         end
@@ -59,10 +59,10 @@ module Pod
             if path
               if subspecs
                 subspecs.each do |subspec|
-                  pod spec_name + '/' + subspec, :podspec => path
+                  pod spec_name + '/' + subspec, :path => path
                 end
               else
-                pod spec_name, :podspec => path
+                pod spec_name, :path => path
               end
             elsif subspecs
               subspecs.each do |subspec|
