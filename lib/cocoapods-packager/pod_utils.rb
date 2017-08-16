@@ -40,12 +40,15 @@ module Pod
 
       def podfile_from_spec(path, spec_name, platform_name, deployment_target, subspecs, sources)
         options = {}
-        if path
-          options[:podspec] = path
+        spec_path = @path
+        if spec_path
+          options[:podspec] = spec_path
         else
           options[:path] = '.'
         end
+        puts "path is #{@path}"
         options[:subspecs] = subspecs if subspecs
+        dependencies = @allLocalDependencies
         Pod::Podfile.new do
           sources.each { |s| source s }
           platform(platform_name, deployment_target)
@@ -55,23 +58,33 @@ module Pod
                    :integrate_targets => false,
                    :deterministic_uuids => false)
 
-          target('packager') do
-            if path
-              if subspecs
-                subspecs.each do |subspec|
-                  pod spec_name + '/' + subspec, :podspec => path
-                end
-              else
-                pod spec_name, :podspec => path
-              end
-            elsif subspecs
-              subspecs.each do |subspec|
-                pod spec_name + '/' + subspec, :path => '.'
-              end
-            else
-              pod spec_name, :path => '.'
+          if not dependencies.nil?
+            for dep in dependencies
+              pod dep.name , path:dep.path
+              puts "pod #{dep.name} #{dep.path}"
             end
+          else
+            puts "depencies is nil"
           end
+          target('packager') do
+             if spec_path
+               if subspecs
+                 subspecs.each do |subspec|
+                   pod spec_name + '/' + subspec, :podspec => spec_path
+                 end
+               else
+                 pod spec_name, :podspec => spec_path
+               end
+             elsif subspecs
+               subspecs.each do |subspec|
+                 pod spec_name + '/' + subspec, :path => '.'
+               end
+             else
+               pod spec_name, :path => '.'
+             end
+          end
+
+
         end
       end
 
@@ -99,8 +112,8 @@ module Pod
 
       def spec_with_path(path)
         return if path.nil? || !Pathname.new(path).exist?
-
-        @path = path
+        @path = Pathname(path).realpath.to_path
+        puts "path is #{@path}"
 
         if Pathname.new(path).directory?
           help! path + ': is a directory.'

@@ -1,4 +1,6 @@
 require 'tmpdir'
+require 'qricker'
+
 module Pod
   class Command
     class Package < Command
@@ -20,7 +22,8 @@ module Pod
           ['--configuration', 'Build the specified configuration (e.g. Debug). Defaults to Release'],
           ['--subspecs', 'Only include the given subspecs'],
           ['--spec-sources=private,https://github.com/CocoaPods/Specs.git', 'The sources to pull dependant ' \
-            'pods from (defaults to https://github.com/CocoaPods/Specs.git)']
+            'pods from (defaults to https://github.com/CocoaPods/Specs.git)'],
+          ['--rclt=rclt-file-path', "rclt file, Collected local speces list"]
         ]
       end
 
@@ -40,10 +43,17 @@ module Pod
         @subspecs = subspecs.split(',') unless subspecs.nil?
 
         @config = argv.option('configuration', 'Release')
+        @rcltfile = argv.option('rclt')
+        puts "rclt file is #{@rcltfile}"
 
         @source_dir = Dir.pwd
         @spec = spec_with_path(@name)
         @spec = spec_with_name(@name) unless @spec
+
+        if @rcltfile
+          @allLocalDependencies = Qricker.dependency(@rcltfile, [@spec.name])
+          puts "dependencies #{@allLocalDependencies}"
+        end
         super
       end
 
